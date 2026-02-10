@@ -1,7 +1,10 @@
 [project]
 name = "headway-dev"
 version = "0.1.0"
-description = "Add your description here"
+description = "A development environment for developing at Headway with AI agents."
 readme = "README.md"
-requires-python = ">=3.12"
-dependencies = []
+requires-python = ">=3.11"
+dependencies = ["typer>=0.21.1"]
+
+[dependency-groups]
+dev = ["basedpyright>=1.37.4", "ruff>=0.15.0"]

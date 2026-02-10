@@ -1,0 +1,73 @@
+# Ruff configuration for matching-ml
+# Documentation: https://docs.astral.sh/ruff/
+
+# Target Python 3.12
+target-version = "py312"
+line-length = 88
+
+# Source root for import resolution
+src = ["src"]
+
+# Exclude common directories
+exclude = [
+  ".git",
+  ".venv",
+  ".ruff_cache",
+  ".metaflow",
+  "__pycache__",
+  "*.pyc",
+  "*.pyo",
+  "*.pyd",
+  ".ipynb_checkpoints",
+]
+extend-include = ["*.ipynb"]
+
+[lint]
+select = [
+  "ANN201", # flake8-annotations (type annotations for public functions)
+  "B",      # flake8-bugbear (likely bugs)
+  "C4",     # flake8-comprehensions
+  "E",      # pycodestyle errors
+  "F",      # Pyflakes
+  "I",      # isort (import sorting)
+  "N",      # pep8-naming
+  "NPY",    # NumPy-specific rules
+  "PD",     # pandas-vet (pandas best practices)
+  "RUF",    # Ruff-specific rules
+  "SIM",    # flake8-simplify
+  "TID",    # flake8-tidy-imports (ban relative imports)
+  "UP",     # pyupgrade (modernize Python code)
+  "W",      # pycodestyle warnings
+]
+ignore = []
+fixable = ["ALL"]
+unfixable = []
+
+# Relaxed rules for test files
+[lint.per-file-ignores]
+"tests/**/*.py" = [
+  "S101",    # Allow assert statements in tests
+  "ARG",     # Allow unused function arguments in tests
+  "FBT",     # Allow boolean positional arguments in tests
+  "PLR2004", # Allow magic values in tests
+  "S311",    # Allow pseudo-random generators in tests
+]
+
+[lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[lint.isort]
+known-first-party = ["src"]
+section-order = [
+  "future",
+  "standard-library",
+  "third-party",
+  "first-party",
+  "local-folder",
+]
+# Separate local imports with a blank line
+lines-after-imports = 2
+
+[format]
+docstring-code-format = true
+docstring-code-line-length = 88

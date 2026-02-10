@@ -1,0 +1,70 @@
+{
+  "pythonVersion": "3.11",
+  "pythonPlatform": "All",
+
+  "include": [
+    "src",
+    "tests",
+    "*.py"
+  ],
+
+  "exclude": [
+    "**/__pycache__",
+    "**/*.pyc",
+    ".git",
+    ".venv",
+    ".ruff_cache",
+    ".metaflow",
+    ".ipynb_checkpoints",
+    "scripts/evaluate_model.py"
+  ],
+
+  "typeCheckingMode": "strict",
+
+  "reportMissingImports": "error",
+  "reportMissingTypeStubs": "warning",
+  "reportUnusedImport": "warning",
+  "reportUnusedClass": "warning",
+  "reportUnusedFunction": "warning",
+  "reportUnusedVariable": "warning",
+  "reportDuplicateImport": "error",
+  "reportOptionalMemberAccess": "error",
+  "reportOptionalCall": "error",
+  "reportOptionalIterable": "error",
+  "reportOptionalSubscript": "error",
+  "reportPrivateUsage": "warning",
+  "reportUnknownMemberType": "warning",
+  "reportUnknownArgumentType": "warning",
+  "reportUnknownVariableType": "warning",
+  "reportUntypedFunctionDecorator": "warning",
+  "reportUntypedClassDecorator": "warning",
+
+  "reportConstantRedefinition": "error",
+  "reportIncompatibleMethodOverride": "error",
+  "reportIncompatibleVariableOverride": "error",
+  "reportInconsistentConstructor": "error",
+
+  "strictListInference": true,
+  "strictDictionaryInference": true,
+  "strictSetInference": true,
+  "strictParameterNoneValue": true,
+
+  "executionEnvironments": [
+    {
+      "root": "src",
+      "pythonVersion": "3.11",
+      "extraPaths": ["."]
+    },
+    {
+      "root": "tests",
+      "pythonVersion": "3.11",
+      "extraPaths": ["."],
+      "reportMissingTypeStubs": "none",
+      "reportUnknownMemberType": "none",
+      "reportUnknownArgumentType": "none",
+      "reportUnknownVariableType": "none",
+      "reportPrivateUsage": "none",
+      "reportUnusedVariable": "none"
+    }
+  ]
+}
