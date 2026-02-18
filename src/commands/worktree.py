@@ -50,8 +50,7 @@ def create_worktree(repo: Path, tmpdir: Path, branch: str) -> None:
     except subprocess.CalledProcessError as e:
         stderr = (e.stderr or "").strip()
         already_used = (
-            "already checked out" in stderr
-            or "already used by worktree" in stderr
+            "already checked out" in stderr or "already used by worktree" in stderr
         )
         if not already_used:
             raise
@@ -65,26 +64,20 @@ def create_worktree(repo: Path, tmpdir: Path, branch: str) -> None:
             f"[yellow]Branch '{branch}' is already checked out at:"
             f"[/yellow]\n  {conflict_path}"
         )
-        if not typer.confirm(
-            "Remove the existing worktree?", default=True
-        ):
+        if not typer.confirm("Remove the existing worktree?", default=True):
             raise typer.Exit(1) from None
         cleanup_worktree(repo, Path(conflict_path))
         git(repo, "worktree", "add", str(tmpdir), branch)
 
 
-def find_conflicting_worktree(
-    repo: Path, branch: str
-) -> str | None:
+def find_conflicting_worktree(repo: Path, branch: str) -> str | None:
     """Return the path of an existing worktree that has *branch* checked out."""
     wt_list = git(repo, "worktree", "list", "--porcelain")
     candidate = ""
     for line in wt_list.stdout.splitlines():
         if line.startswith("worktree "):
             candidate = line.removeprefix("worktree ")
-        elif line.startswith("branch ") and line.endswith(
-            f"/{branch}"
-        ):
+        elif line.startswith("branch ") and line.endswith(f"/{branch}"):
             return candidate
     return None
 
@@ -92,14 +85,15 @@ def find_conflicting_worktree(
 def sync_untracked_files(repo: Path, worktree: Path) -> None:
     """Rsync untracked (non-ignored) files from *repo* into *worktree*."""
     untracked = git(repo, "ls-files", "--others")
-    filtered = "\n".join(
-        p for p in untracked.stdout.splitlines() if should_sync(p)
-    )
+    filtered = "\n".join(p for p in untracked.stdout.splitlines() if should_sync(p))
     if filtered:
         subprocess.run(
             [
-                "rsync", "-a", "--files-from=-",
-                f"{repo}/", f"{worktree}/",
+                "rsync",
+                "-a",
+                "--files-from=-",
+                f"{repo}/",
+                f"{worktree}/",
             ],
             input=filtered,
             text=True,

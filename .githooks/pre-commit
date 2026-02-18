@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -e
+
+echo "Running ruff format..."
+uv run ruff format --check src/ tests/
+
+echo "Running ruff check..."
+uv run ruff check src/ tests/
+
+echo "Running basedpyright..."
+uv run basedpyright src/

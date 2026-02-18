@@ -23,12 +23,9 @@ def prompt_uncommitted_changes(
     try:
         while changes := uncommitted_changes(worktree):
             console.print()
+            console.print("[bold yellow]\u26a0  Uncommitted changes[/bold yellow]")
             console.print(
-                "[bold yellow]\u26a0  Uncommitted changes[/bold yellow]"
-            )
-            console.print(
-                "[dim]These will be lost when the worktree is "
-                "removed.[/dim]\n"
+                "[dim]These will be lost when the worktree is removed.[/dim]\n"
             )
             print_change_summary(changes)
             keep_going = typer.confirm(
@@ -37,10 +34,7 @@ def prompt_uncommitted_changes(
             )
             if not keep_going:
                 break
-            console.print(
-                "[dim]Returning to shell. "
-                "Type 'exit' when done.[/dim]\n"
-            )
+            console.print("[dim]Returning to shell. Type 'exit' when done.[/dim]\n")
             launch_shell(user_shell, shell_env, activate_cmd, worktree)
     except (EOFError, KeyboardInterrupt):
         pass
@@ -53,8 +47,10 @@ def print_change_summary(changes: str) -> None:
         status, _, name = line.partition(" ")
         name = name.strip()
         color = {
-            "M": "yellow", "A": "green",
-            "D": "red", "??": "cyan",
+            "M": "yellow",
+            "A": "green",
+            "D": "red",
+            "??": "cyan",
         }.get(status.strip(), "white")
         console.print(f"  [{color}]{status}[/{color}] {name}")
     if len(lines) > 15:

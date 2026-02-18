@@ -30,9 +30,7 @@ console = Console()
 def start(
     branch: Annotated[
         str | None,
-        typer.Argument(
-            help="Git branch to work on. If omitted, you will be prompted."
-        ),
+        typer.Argument(help="Git branch to work on. If omitted, you will be prompted."),
     ] = None,
     command: Annotated[
         str | None,
@@ -98,53 +96,36 @@ def start(
         sys.exit(128 + signum)
 
     try:
-        with console.status(
-            "[bold cyan]Creating worktree ...", spinner="dots"
-        ):
+        with console.status("[bold cyan]Creating worktree ...", spinner="dots"):
             create_worktree(repo, tmpdir, resolved_branch)
         console.print(
-            f"[green]\u2713[/green] Worktree created for "
-            f"[bold]{resolved_branch}[/bold]"
+            f"[green]\u2713[/green] Worktree created for [bold]{resolved_branch}[/bold]"
         )
 
-        with console.status(
-            "[bold cyan]Syncing untracked files ...", spinner="dots"
-        ):
+        with console.status("[bold cyan]Syncing untracked files ...", spinner="dots"):
             sync_untracked_files(repo, tmpdir)
         console.print("[green]\u2713[/green] Untracked files synced")
 
-        with console.status(
-            "[bold cyan]Linking dependencies ...", spinner="dots"
-        ):
+        with console.status("[bold cyan]Linking dependencies ...", spinner="dots"):
             link_deps(repo, tmpdir)
         console.print("[green]\u2713[/green] Dependencies linked")
 
         if (tmpdir / "mise.toml").exists():
-            subprocess.run(
-                ["mise", "trust"], cwd=tmpdir, capture_output=True
-            )
+            subprocess.run(["mise", "trust"], cwd=tmpdir, capture_output=True)
 
         console.print()
-        console.print(
-            f"[bold green]Worktree ready![/bold green] [dim]{tmpdir}[/dim]"
-        )
-        console.print(
-            f"[dim]Branch:[/dim] [bold]{resolved_branch}[/bold]"
-        )
+        console.print(f"[bold green]Worktree ready![/bold green] [dim]{tmpdir}[/dim]")
+        console.print(f"[dim]Branch:[/dim] [bold]{resolved_branch}[/bold]")
         console.print()
 
         signal.signal(signal.SIGINT, _signal_handler)
         signal.signal(signal.SIGTERM, _signal_handler)
 
         if not shell_only:
-            console.print(
-                f"[bold cyan]Launching:[/bold cyan] {agent_cmd}\n"
-            )
+            console.print(f"[bold cyan]Launching:[/bold cyan] {agent_cmd}\n")
             subprocess.run(agent_cmd, cwd=tmpdir, shell=True)
 
-        console.print(
-            "[dim]Dropping into shell. Type 'exit' to clean up.[/dim]\n"
-        )
+        console.print("[dim]Dropping into shell. Type 'exit' to clean up.[/dim]\n")
 
         shell_env = build_shell_env()
         venv_dir = tmpdir / "mamba" / "venv"
