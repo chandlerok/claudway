@@ -1,3 +1,6 @@
+import subprocess
+from pathlib import Path
+
 from rich.console import Console
 from rich.table import Table
 
@@ -7,6 +10,29 @@ from src.settings import CONFIG_FILE, ClaudwaySettings
 
 
 console = Console()
+
+
+def _list_worktrees(repo: Path) -> list[tuple[str, str]]:
+    """Return a list of (path, branch) tuples for all worktrees in the repo."""
+    result = subprocess.run(
+        ["git", "-C", str(repo), "worktree", "list", "--porcelain"],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        return []
+
+    worktrees: list[tuple[str, str]] = []
+    path = ""
+    for line in result.stdout.splitlines():
+        if line.startswith("worktree "):
+            path = line.removeprefix("worktree ")
+        elif line.startswith("branch "):
+            branch = line.removeprefix("branch refs/heads/")
+            worktrees.append((path, branch))
+        elif line == "bare":
+            worktrees.append((path, "(bare)"))
+    return worktrees
 
 
 @app.command()
