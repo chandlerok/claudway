@@ -15,7 +15,7 @@ def set_repo_location(
     path: Annotated[
         str | None,
         typer.Argument(
-            help="Path to the repository. If omitted, you will be prompted.",
+            help="Path to the Headway repository. If omitted, you will be prompted.",
         ),
     ] = None,
 ) -> None:
