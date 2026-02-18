@@ -12,7 +12,7 @@ from rich.console import Console
 
 from src.app import app
 from src.commands.cleanup import prompt_uncommitted_changes
-from src.commands.git import resolve_branch
+from src.commands.git import detect_repo, get_current_branch, resolve_branch
 from src.commands.shell import build_shell_env, get_activate_cmd, launch_shell
 from src.commands.worktree import (
     cleanup_worktree,
@@ -20,7 +20,7 @@ from src.commands.worktree import (
     link_deps,
     sync_untracked_files,
 )
-from src.settings import ClaudwaySettings, validate_path
+from src.settings import ClaudwaySettings
 
 
 console = Console()
@@ -40,14 +40,6 @@ def go(
             help="Command to run instead of the default agent.",
         ),
     ] = None,
-    repo_path: Annotated[
-        str | None,
-        typer.Option(
-            "--repo",
-            "-r",
-            help="Path to the git repository (overrides default_repo_location).",
-        ),
-    ] = None,
     shell_only: Annotated[
         bool,
         typer.Option(
@@ -59,14 +51,12 @@ def go(
 ) -> None:
     """Start an isolated dev environment in a git worktree."""
     settings = ClaudwaySettings.load()
-    if repo_path is not None:
-        repo = validate_path(repo_path)
-    elif settings.default_repo_location is not None:
-        repo = Path(settings.default_repo_location)
-    else:
-        raw = typer.prompt("Enter the path to your repository")
-        repo = validate_path(raw)
-    resolved_branch = resolve_branch(repo, branch)
+    repo = detect_repo()
+    if repo is None:
+        console.print("[red]Not inside a git repository.[/red]")
+        raise typer.Exit(1)
+    current_branch = get_current_branch(repo)
+    resolved_branch = resolve_branch(repo, branch, base=current_branch)
     agent_cmd = command or settings.default_command
     user_shell = os.environ.get("SHELL", "/bin/sh")
 

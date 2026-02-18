@@ -12,14 +12,13 @@ This installs the `cw` command.
 
 ## Quick Start
 
-**Launch a new session**
-Simply run the following to get started with a new session!:
+`cd` into your git repository and run:
 
 ```bash
-cw go
+cw go feature/my-branch
 ```
 
-Unless they are already configured, claudway will ask you the location of your main repository, and will ask the name of a branch (existing or new) with which to open the new git worktree.
+Claudway auto-detects the repo from your current directory and creates a temporary worktree on the specified branch. New branches are forked from your current branch.
 
 ## Usage
 
@@ -49,13 +48,10 @@ cw go experiment --shell
 ### Other Commands
 
 ```bash
-# Set or change the default repo location
-cw set-default-repo [PATH]
-
 # Set or change the default command
 cw set-default-command [COMMAND]
 
-# Show current configuration
+# Show current configuration and active worktrees
 cw status
 ```
 
@@ -63,28 +59,28 @@ cw status
 
 When you run `cw go`, claudway:
 
-1. **Creates a temporary git worktree** — a separate checkout of your repo on the specified branch, placed in a temp directory. This gives the agent its own working copy so it won't conflict with your main checkout or other sessions.
+1. **Detects your git repository** — finds the repo root from your current directory, even if you're inside an existing worktree.
 
-2. **Syncs untracked files** — copies over untracked files from your main repo (skipping large/generated directories like `node_modules`, `.venv`, `dist`, etc.) so the worktree has your local config files and other non-committed assets.
+2. **Creates a temporary git worktree** — a separate checkout of your repo on the specified branch, placed in a temp directory. New branches are forked from your current branch. This gives the agent its own working copy so it won't conflict with your main checkout or other sessions.
 
-3. **Symlinks dependencies** — links dependency directories (like `node_modules` and virtualenvs) from the main repo into the worktree to avoid redundant installs.
+3. **Syncs untracked files** — copies over untracked files from your main repo (skipping large/generated directories like `node_modules`, `.venv`, `dist`, etc.) so the worktree has your local config files and other non-committed assets.
 
-4. **Launches your agent** — runs `claude` (or whatever command you specify with `-c`) inside the worktree.
+4. **Symlinks dependencies** — links dependency directories (like `node_modules` and virtualenvs) from the main repo into the worktree to avoid redundant installs.
 
-5. **Drops into a shell** — after the agent exits, you get an interactive shell in the worktree to inspect changes, run tests, etc.
+5. **Launches your agent** — runs `claude` (or whatever command you specify with `-c`) inside the worktree.
 
-6. **Cleans up** — when you exit the shell, the worktree is automatically removed. Your branch and its commits are preserved in the main repo.
+6. **Drops into a shell** — after the agent exits, you get an interactive shell in the worktree to inspect changes, run tests, etc.
+
+7. **Cleans up** — when you exit the shell, the worktree is automatically removed. Your branch and its commits are preserved in the main repo.
 
 ## Configuration
 
 Claudway stores its config at `~/.config/claudway/config.toml`:
 
 ```toml
-default_repo_location = "/path/to/repo"
 default_command = "claude"
 ```
 
 | Key | Description | Default |
 |---|---|---|
-| `default_repo_location` | Path to your git repository | _(none, prompted if unset)_ |
 | `default_command` | Default command to run in new sessions | `claude` |
