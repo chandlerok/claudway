@@ -22,7 +22,7 @@ def status() -> None:
         "default_repo_location",
         str(repo) if repo else "[dim]not set[/dim]",
     )
-    table.add_row("agent", settings.agent)
+    table.add_row("default_command", settings.default_command)
     table.add_row("config file", str(CONFIG_FILE))
 
     console.print(table)

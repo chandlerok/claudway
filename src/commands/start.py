@@ -67,7 +67,7 @@ def go(
         raw = typer.prompt("Enter the path to your repository")
         repo = validate_path(raw)
     resolved_branch = resolve_branch(repo, branch)
-    agent_cmd = command or settings.agent
+    agent_cmd = command or settings.default_command
     user_shell = os.environ.get("SHELL", "/bin/sh")
 
     tmpdir = Path(tempfile.mkdtemp(prefix="cw-"))

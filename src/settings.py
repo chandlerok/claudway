@@ -12,7 +12,7 @@ CONFIG_FILE = CONFIG_DIR / "config.toml"
 
 class ClaudwaySettings(BaseModel):
     default_repo_location: DirectoryPath | None = None
-    agent: str = "claude"
+    default_command: str = "claude"
 
     @classmethod
     def load(cls) -> "ClaudwaySettings":
@@ -49,16 +49,20 @@ DEP_SYMLINKS = (
 )
 
 
-def save_default_repo_location(path: Path) -> None:
-    """Persist the default repo location to the TOML config file."""
+def save_setting(key: str, value: str) -> None:
+    """Persist a single setting to the TOML config file."""
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Read existing config (if any) and update default_repo_location
     data: dict[str, str] = {}
     if CONFIG_FILE.exists():
         data = tomllib.loads(CONFIG_FILE.read_text())
-    data["default_repo_location"] = str(path.resolve())
+    data[key] = value
     CONFIG_FILE.write_bytes(tomli_w.dumps(data).encode())
+
+
+def save_default_repo_location(path: Path) -> None:
+    """Persist the default repo location to the TOML config file."""
+    save_setting("default_repo_location", str(path.resolve()))
 
 
 def set_default_repo_location_with_prompt() -> Path:

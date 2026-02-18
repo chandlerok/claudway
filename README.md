@@ -51,6 +51,9 @@ cw go experiment --shell
 ```bash
 # Set or change the default repo location
 cw set-default-repo [PATH]
+
+# Set or change the default command
+cw set-default-command [COMMAND]
 ```
 
 ## How It Works
@@ -75,10 +78,10 @@ Claudway stores its config at `~/.config/claudway/config.toml`:
 
 ```toml
 default_repo_location = "/path/to/repo"
-agent = "claude"
+default_command = "claude"
 ```
 
 | Key | Description | Default |
 |---|---|---|
 | `default_repo_location` | Path to your git repository | _(none, required)_ |
-| `agent` | Default agent command to run | `claude` |
+| `default_command` | Default command to run in new sessions | `claude` |
