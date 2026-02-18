@@ -5,7 +5,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
 import typer
 from rich.console import Console
@@ -69,7 +69,7 @@ def start(
 
     # Shell context - populated once the worktree is ready, used by cleanup
     # to offer a "return to shell" option.
-    shell_ctx: dict[str, str] = {}
+    shell_ctx: dict[str, Any] = {}
 
     def do_cleanup() -> None:
         nonlocal cleanup_done
@@ -79,7 +79,7 @@ def start(
             prompt_uncommitted_changes(
                 tmpdir,
                 shell_ctx["user_shell"],
-                shell_ctx["shell_env"],  # type: ignore[arg-type]
+                shell_ctx["shell_env"],
                 shell_ctx["activate_cmd"],
             )
         cleanup_done = True
@@ -133,7 +133,7 @@ def start(
 
         shell_ctx.update(
             user_shell=user_shell,
-            shell_env=shell_env,  # type: ignore[dict-item]
+            shell_env=shell_env,
             activate_cmd=activate_cmd,
         )
 

@@ -13,11 +13,6 @@ from src.settings import DEP_SYMLINKS
 console = Console()
 
 
-class WorktreeConflictError(Exception):
-    def __init__(self, path: str) -> None:
-        self.path = path
-
-
 def link_deps(repo: Path, worktree: Path) -> None:
     for rel_path in DEP_SYMLINKS:
         source = repo / rel_path
