@@ -15,7 +15,6 @@ def prompt_uncommitted_changes(
     worktree: Path,
     user_shell: str,
     shell_env: dict[str, str],
-    activate_cmd: str,
 ) -> None:
     """If the worktree has uncommitted changes, warn and optionally re-enter shell."""
     if not sys.stdin.isatty() or not worktree.exists():
@@ -35,7 +34,7 @@ def prompt_uncommitted_changes(
             if not keep_going:
                 break
             console.print("[dim]Returning to shell. Type 'exit' when done.[/dim]\n")
-            launch_shell(user_shell, shell_env, activate_cmd, worktree)
+            launch_shell(user_shell, shell_env, worktree)
     except (EOFError, KeyboardInterrupt):
         pass
 

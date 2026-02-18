@@ -2,7 +2,7 @@
 
 A CLI tool that creates isolated dev environments for working with AI agents. Spin up temporary git worktrees so you can run multiple Claude Code sessions (or anything else) on different branches simultaneously — without them stepping on each other.
 
-![claudway demo](./demo.gif)
+![claudway demo](./demo/demo.gif)
 
 ## Installation
 

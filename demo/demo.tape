@@ -1,5 +1,5 @@
 # Claudway Demo
-Output demo.gif
+Output demo/demo.gif
 
 Set FontSize 16
 Set Width 1000
@@ -21,6 +21,9 @@ Sleep 3s
 
 # Launch an isolated session on a new branch
 Type "cw go demo/add-dark-mode --shell"
+Enter
+Sleep 2s
+Type "y"
 Enter
 Sleep 5s
 
