@@ -7,6 +7,6 @@ app = typer.Typer(
     context_settings={"help_option_names": ["--help", "-h"]},
 )
 
-import claudway.commands.set_repo  # noqa: E402
-import claudway.commands.start  # noqa: E402
-import claudway.commands.startup  # noqa: E402, F401
+import src.commands.set_repo  # noqa: E402
+import src.commands.start  # noqa: E402
+import src.commands.startup  # noqa: E402, F401

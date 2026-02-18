@@ -12,8 +12,8 @@ from typing import Annotated
 import typer
 from rich.console import Console
 
-from claudway.app import app
-from claudway.settings import (
+from src.app import app
+from src.settings import (
     DEP_SYMLINKS,
     SKIP_NAMES,
     SKIP_PREFIXES,
