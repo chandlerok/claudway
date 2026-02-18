@@ -12,21 +12,14 @@ This installs the `cw` command.
 
 ## Quick Start
 
-1. **Set your repo location:**
+**Launch a new session**
+Simply run the following to get started with a new session!:
 
-   ```bash
-   cw set-repo-location /path/to/your/repo
-   ```
+```bash
+cw start
+```
 
-   This saves the path to `~/.claudway/config`. If you skip this step, claudway will prompt you the first time you run a command.
-
-2. **Start a session:**
-
-   ```bash
-   cw start my-feature-branch
-   ```
-
-   If the branch doesn't exist, claudway will offer to create it for you. If you omit the branch name, you'll be prompted to enter one.
+Unless they are already configured, claudway will ask you the location of your main headway repository, and will ask the name of a branch (existing or new) with which to open the new git worktree.
 
 ## Usage
 
@@ -47,7 +40,7 @@ cw start [BRANCH] [OPTIONS]
 cw start feature/add-auth
 
 # Run a custom command instead of the default agent
-cw start bugfix/login -c "cursor"
+cw start bugfix/login -c "cursor ."
 
 # Just get a shell in the worktree, no agent
 cw start experiment --shell
