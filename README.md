@@ -16,15 +16,15 @@ This installs the `cw` command.
 Simply run the following to get started with a new session!:
 
 ```bash
-cw start
+cw go
 ```
 
-Unless they are already configured, claudway will ask you the location of your main headway repository, and will ask the name of a branch (existing or new) with which to open the new git worktree.
+Unless they are already configured, claudway will ask you the location of your main repository, and will ask the name of a branch (existing or new) with which to open the new git worktree.
 
 ## Usage
 
 ```
-cw start [BRANCH] [OPTIONS]
+cw go [BRANCH] [OPTIONS]
 ```
 
 | Option | Description |
@@ -37,25 +37,25 @@ cw start [BRANCH] [OPTIONS]
 
 ```bash
 # Start Claude Code on a new feature branch
-cw start feature/add-auth
+cw go feature/add-auth
 
 # Run a custom command instead of the default agent
-cw start bugfix/login -c "cursor ."
+cw go bugfix/login -c "cursor ."
 
 # Just get a shell in the worktree, no agent
-cw start experiment --shell
+cw go experiment --shell
 ```
 
 ### Other Commands
 
 ```bash
-# Set or change the repo location
-cw set-repo-location [PATH]
+# Set or change the default repo location
+cw set-default-repo [PATH]
 ```
 
 ## How It Works
 
-When you run `cw start`, claudway:
+When you run `cw go`, claudway:
 
 1. **Creates a temporary git worktree** — a separate checkout of your repo on the specified branch, placed in a temp directory. This gives the agent its own working copy so it won't conflict with your main checkout or other sessions.
 
@@ -71,9 +71,14 @@ When you run `cw start`, claudway:
 
 ## Configuration
 
-Claudway stores its config at `~/.claudway/config` as environment variables:
+Claudway stores its config at `~/.config/claudway/config.toml`:
 
-| Variable | Description | Default |
+```toml
+default_repo_location = "/path/to/repo"
+agent = "claude"
+```
+
+| Key | Description | Default |
 |---|---|---|
-| `CLAUDWAY_REPO_LOCATION` | Path to your git repository | _(none, required)_ |
-| `CLAUDWAY_AGENT` | Default agent command to run | `claude` |
+| `default_repo_location` | Path to your git repository | _(none, required)_ |
+| `agent` | Default agent command to run | `claude` |
