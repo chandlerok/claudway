@@ -54,6 +54,9 @@ cw set-default-repo [PATH]
 
 # Set or change the default command
 cw set-default-command [COMMAND]
+
+# Show current configuration
+cw status
 ```
 
 ## How It Works
@@ -83,5 +86,5 @@ default_command = "claude"
 
 | Key | Description | Default |
 |---|---|---|
-| `default_repo_location` | Path to your git repository | _(none, required)_ |
+| `default_repo_location` | Path to your git repository | _(none, prompted if unset)_ |
 | `default_command` | Default command to run in new sessions | `claude` |

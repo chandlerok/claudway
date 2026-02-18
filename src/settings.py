@@ -1,5 +1,6 @@
 import tomllib
 from pathlib import Path
+from typing import Any
 
 import tomli_w
 import typer
@@ -19,7 +20,12 @@ class ClaudwaySettings(BaseModel):
         """Load settings from the TOML config file."""
         if not CONFIG_FILE.exists():
             return cls()
-        data = tomllib.loads(CONFIG_FILE.read_text())
+        try:
+            data = tomllib.loads(CONFIG_FILE.read_text(encoding="utf-8"))
+        except (tomllib.TOMLDecodeError, UnicodeDecodeError) as e:
+            typer.echo(f"Error: failed to parse config at {CONFIG_FILE}: {e}")
+            typer.echo("Fix or remove the file, then try again.")
+            raise typer.Exit(1) from None
         return cls.model_validate(data)
 
 
@@ -53,9 +59,14 @@ def save_setting(key: str, value: str) -> None:
     """Persist a single setting to the TOML config file."""
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 
-    data: dict[str, str] = {}
+    data: dict[str, Any] = {}
     if CONFIG_FILE.exists():
-        data = tomllib.loads(CONFIG_FILE.read_text())
+        try:
+            data = tomllib.loads(CONFIG_FILE.read_text(encoding="utf-8"))
+        except (tomllib.TOMLDecodeError, UnicodeDecodeError) as e:
+            typer.echo(f"Warning: failed to parse config at {CONFIG_FILE}: {e}")
+            typer.echo("Overwriting with new config.")
+            data = {}
     data[key] = value
     CONFIG_FILE.write_bytes(tomli_w.dumps(data).encode())
 
