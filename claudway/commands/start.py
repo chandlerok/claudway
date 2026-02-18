@@ -11,8 +11,8 @@ from typing import Annotated
 import typer
 from rich.console import Console
 
-from headway_dev.app import app
-from headway_dev.settings import HeadwaySettings
+from claudway.app import app
+from claudway.settings import ClaudwaySettings
 
 console = Console()
 
@@ -134,9 +134,9 @@ def start(
     ] = False,
 ) -> None:
     """Start an isolated dev environment in a git worktree."""
-    settings = HeadwaySettings()
+    settings = ClaudwaySettings()
     if settings.repo_location is None:
-        console.print("[red]Error:[/red] repo location is not set. Run [bold]hwdev set-repo-location[/bold] first.")
+        console.print("[red]Error:[/red] repo location is not set. Run [bold]cw set-repo-location[/bold] first.")
         raise typer.Exit(1)
 
     repo = Path(settings.repo_location)
@@ -144,7 +144,7 @@ def start(
     agent_cmd = command or settings.agent
     user_shell = os.environ.get("SHELL", "/bin/sh")
 
-    tmpdir = Path(tempfile.mkdtemp(prefix="hwdev-"))
+    tmpdir = Path(tempfile.mkdtemp(prefix="cw-"))
     # git worktree add requires the target dir not to exist
     tmpdir.rmdir()
     cleanup_done = False
@@ -228,7 +228,7 @@ def start(
         shell_env = {k: v for k, v in os.environ.items() if k != "VIRTUAL_ENV"}
         shell_env["PATH"] = os.pathsep.join(
             p for p in os.environ.get("PATH", "").split(os.pathsep)
-            if "headway-dev" not in p
+            if "claudway" not in p
         )
 
         venv_dir = tmpdir / "mamba" / "venv"

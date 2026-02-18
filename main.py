@@ -1,4 +1,4 @@
-from headway_dev.app import app
+from claudway.app import app
 
 
 if __name__ == "__main__":

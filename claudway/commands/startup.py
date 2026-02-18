@@ -1,17 +1,17 @@
 import typer
 
-from headway_dev.app import app
-from headway_dev.settings import (
+from claudway.app import app
+from claudway.settings import (
     CONFIG_FILE,
-    HeadwaySettings,
+    ClaudwaySettings,
     set_repo_location_with_prompt,
 )
 
 
 @app.callback()
 def _startup(ctx: typer.Context) -> None:  # pyright: ignore[reportUnusedFunction]
-    """Headway Dev CLI — an isolated dev environment for working with AI agents."""
-    settings = HeadwaySettings()
+    """Claudway — an isolated dev environment for working with AI agents."""
+    settings = ClaudwaySettings()
     if settings.repo_location is not None:
         return
 

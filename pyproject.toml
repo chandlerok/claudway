@@ -1,13 +1,13 @@
 [project]
-name = "headway-dev"
+name = "claudway"
 version = "0.1.0"
-description = "A development environment for developing at Headway with AI agents."
+description = "An isolated dev environment for working with AI agents."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = ["pydantic-settings>=2.12.0", "typer>=0.21.1"]
 
 [project.scripts]
-hwdev = "headway_dev.app:app"
+cw = "claudway.app:app"
 
 [build-system]
 requires = ["hatchling"]
