@@ -7,11 +7,14 @@ requires-python = ">=3.11"
 dependencies = ["pydantic-settings>=2.12.0", "typer>=0.21.1"]
 
 [project.scripts]
-cw = "claudway.app:app"
+cw = "src.app:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [dependency-groups]
-dev = ["basedpyright>=1.37.4", "ruff>=0.15.0"]
+dev = ["basedpyright>=1.38.1", "pytest>=9.0.2", "ruff>=0.15.1"]

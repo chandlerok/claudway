@@ -42,6 +42,32 @@ class ClaudwaySettings(BaseSettings):
     agent: str = "claude"
 
 
+# Directory prefixes to skip when syncing untracked files.
+# These are large/regenerable and either get symlinked (deps) or aren't needed.
+SKIP_PREFIXES = (
+    "node_modules/",
+    ".venv/",
+    "venv/",
+    "__pycache__/",
+    ".next/",
+    ".turbo/",
+    ".nuxt/",
+    ".cache/",
+    "dist/",
+    "build/",
+    "coverage/",
+)
+
+SKIP_SUFFIXES = (".sqlite3", ".db", ".pyc")
+SKIP_NAMES = frozenset({".DS_Store", ".coverage"})
+
+# Directories to symlink from the main repo into the worktree
+DEP_SYMLINKS = (
+    "web/node_modules",
+    "mamba/venv",
+)
+
+
 def save_repo_location(path: Path) -> None:
     """Persist the repo location to the config file at ~/.claudway/config."""
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)

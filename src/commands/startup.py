@@ -1,7 +1,7 @@
 import typer
 
-from claudway.app import app
-from claudway.settings import (
+from src.app import app
+from src.settings import (
     CONFIG_FILE,
     ClaudwaySettings,
     set_repo_location_with_prompt,
