@@ -23,6 +23,10 @@ Unless they are already configured, claudway will ask you the location of your m
 
 ## Usage
 
+### `cw go`
+
+Start an isolated dev environment in a git worktree.
+
 ```
 cw go [BRANCH] [OPTIONS]
 ```
@@ -31,9 +35,10 @@ cw go [BRANCH] [OPTIONS]
 |---|---|
 | `BRANCH` | Git branch to work on (prompted if omitted) |
 | `-c`, `--command` | Custom command to run instead of the default agent |
+| `-r`, `--repo` | Path to the git repository (overrides `default_repo_location`) |
 | `-s`, `--shell` | Drop into a shell without launching the agent |
 
-### Examples
+#### Examples
 
 ```bash
 # Start Claude Code on a new feature branch
@@ -44,18 +49,51 @@ cw go bugfix/login -c "cursor ."
 
 # Just get a shell in the worktree, no agent
 cw go experiment --shell
+
+# Use a different repo for this session
+cw go feature/new-api -r ~/repos/other-project
 ```
 
-### Other Commands
+### `cw set-default-repo`
+
+Set or change the default repository location. If the path is omitted, you will be prompted interactively.
 
 ```bash
-# Set or change the default repo location
 cw set-default-repo [PATH]
+```
 
-# Set or change the default command
+### `cw set-default-command`
+
+Set or change the default command that runs in new sessions.
+
+```bash
 cw set-default-command [COMMAND]
+```
 
-# Show current configuration
+#### Examples
+
+```bash
+# CLI AI Agents
+cw set-default-command "claude" # default
+cw set-default-command "opencode"
+
+# IDEs
+cw set-default-command "cursor ."
+cw set-default-command "code ."
+cw set-default-command "zed ."
+
+# TUI text editors
+cw set-default-command "vim"
+cw set-default-command "nvim"
+cw set-default-command "hx"
+cw set-default-command "nano"
+```
+
+### `cw status`
+
+Show current configuration and list all git worktrees for the configured repository.
+
+```bash
 cw status
 ```
 
