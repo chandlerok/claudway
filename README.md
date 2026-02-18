@@ -5,7 +5,7 @@ A CLI tool that creates isolated dev environments for working with AI agents. Sp
 ## Installation
 
 ```bash
-pip install .
+uv tool install .
 ```
 
 This installs the `cw` command.
