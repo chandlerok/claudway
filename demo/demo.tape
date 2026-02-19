@@ -20,7 +20,7 @@ Type "cw status"
 Enter
 Sleep 3s
 
-# Launch an isolated session on a new branch
+# Launch a temporary session on a new branch
 Type "cw go demo/add-dark-mode --shell"
 Enter
 Sleep 2s
@@ -33,16 +33,53 @@ Type "cw status"
 Enter
 Sleep 3s
 
-# Exit and watch cleanup
+# Exit — temporary worktree auto-cleans up
 Type "exit"
 Enter
 Sleep 4s
 
-# Show worktree is gone but branch remains
+# Launch a persistent session
+Type "cw go demo/refactor-api --shell --persistent"
+Enter
+Sleep 2s
+Type "y"
+Enter
+Sleep 5s
+
+# Show the persistent worktree is active
 Type "cw status"
 Enter
 Sleep 3s
 
-Type "git branch"
+# Exit — persistent worktree survives
+Type "exit"
+Enter
+Sleep 4s
+
+# Status shows the persistent worktree is still there
+Type "cw status"
+Enter
+Sleep 3s
+
+# Switch back into the persistent worktree
+Type "cw switch demo/refactor-api"
+Enter
+Sleep 3s
+
+# Exit again
+Type "exit"
+Enter
+Sleep 3s
+
+# Remove the persistent worktree
+Type "cw rm demo/refactor-api"
+Enter
+Sleep 2s
+Type "y"
+Enter
+Sleep 3s
+
+# Final status — clean
+Type "cw status"
 Enter
 Sleep 3s
