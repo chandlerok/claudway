@@ -28,12 +28,21 @@ Type "y"
 Enter
 Sleep 5s
 
-# Show we're in the worktree
-Type "git branch --show-current"
+# Show the worktree is active
+Type "cw status"
 Enter
-Sleep 2s
+Sleep 3s
 
 # Exit and watch cleanup
 Type "exit"
+Enter
+Sleep 4s
+
+# Show worktree is gone but branch remains
+Type "cw status"
+Enter
+Sleep 3s
+
+Type "git branch"
 Enter
 Sleep 3s
