@@ -1,4 +1,5 @@
 import subprocess
+import sys
 from pathlib import Path
 
 import typer
@@ -73,7 +74,15 @@ def branch_exists(repo: Path, branch: str) -> bool:
 
 def ensure_branch(repo: Path, branch: str, base: str | None = None) -> str:
     """Ensure *branch* exists, prompting the user to create it if needed."""
+    # Normalize remote refs (e.g. "origin/foo" -> "foo") to avoid detached HEAD
+    if branch.startswith("origin/"):
+        branch = branch.removeprefix("origin/")
     if branch_exists(repo, branch):
+        return branch
+    # If a remote tracking branch exists, create a local branch tracking it
+    remote_ref = f"origin/{branch}"
+    if branch_exists(repo, remote_ref):
+        git(repo, "branch", "--track", branch, remote_ref)
         return branch
     create = typer.confirm(
         f"Branch '{branch}' does not exist. Create it?", default=True
@@ -87,8 +96,96 @@ def ensure_branch(repo: Path, branch: str, base: str | None = None) -> str:
     return branch
 
 
+def list_local_branches(repo: Path) -> list[str]:
+    """Return local branch names sorted by most recent commit first."""
+    try:
+        output = git(
+            repo,
+            "branch",
+            "--sort=-committerdate",
+            "--format=%(refname:short)",
+        )
+    except subprocess.CalledProcessError:
+        return []
+    return [b for b in output.stdout.strip().splitlines() if b]
+
+
+def list_remote_branches(repo: Path) -> list[str]:
+    """Return remote branch names (no prefix), sorted by recency."""
+    try:
+        output = git(
+            repo,
+            "branch",
+            "-r",
+            "--sort=-committerdate",
+            "--format=%(refname:short)",
+        )
+    except subprocess.CalledProcessError:
+        return []
+    branches: list[str] = []
+    for b in output.stdout.strip().splitlines():
+        if not b or "/HEAD" in b:
+            continue
+        # Strip remote prefix (e.g. "origin/feature" -> "feature")
+        _, _, name = b.partition("/")
+        if name:
+            branches.append(name)
+    return branches
+
+
+CREATE_NEW = "+ Create new branch..."
+
+
+def select_branch(repo: Path) -> str:
+    """Show a fuzzy-filterable branch list. Falls back to plain prompt if not a TTY."""
+    current = get_current_branch(repo)
+    local = [b for b in list_local_branches(repo) if b != current]
+    local_set = set(local)
+    remote_only = [
+        b for b in list_remote_branches(repo) if b not in local_set and b != current
+    ]
+
+    if not sys.stdin.isatty():
+        return typer.prompt("Enter a branch name")
+
+    from InquirerPy import inquirer  # pyright: ignore[reportPrivateImportUsage]
+    from InquirerPy.utils import get_style  # pyright: ignore[reportPrivateImportUsage]
+
+    style = get_style(
+        {
+            "questionmark": "ansiyellow bold",
+            "pointer": "ansicyan bold",
+            "highlighted": "ansicyan",
+            "selected": "ansigreen",
+            "answer": "ansigreen",
+            "input": "ansimagenta bold",
+            "fuzzy_prompt": "ansimagenta bold",
+            "fuzzy_info": "ansiwhite",
+            "fuzzy_border": "ansiblue",
+            "fuzzy_match": "ansiyellow bold",
+        },
+        style_override=False,
+    )
+
+    choices: list[str] = [CREATE_NEW]
+    choices.extend(local)
+    choices.extend(f"origin/{b}" for b in remote_only)
+
+    selected: str = inquirer.fuzzy(  # pyright: ignore[reportPrivateImportUsage]
+        message="Select a branch:",
+        choices=choices,
+        style=style,
+    ).execute()
+
+    if selected == CREATE_NEW:
+        return typer.prompt("Enter a new branch name")
+    if selected.startswith("origin/"):
+        return selected.removeprefix("origin/")
+    return selected
+
+
 def resolve_branch(repo: Path, branch: str | None, base: str | None = None) -> str:
     if branch is not None:
         return ensure_branch(repo, branch, base=base)
-    branch_name = typer.prompt("Enter a branch name")
+    branch_name = select_branch(repo)
     return ensure_branch(repo, branch_name, base=base)
