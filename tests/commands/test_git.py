@@ -79,6 +79,13 @@ class TestListRemoteBranches:
         assert list_remote_branches(REPO) == ["main"]
 
     @patch("src.commands.git.git")
+    def test_ignores_non_origin_remotes(self, mock_git: patch) -> None:  # type: ignore[type-arg]
+        mock_git.return_value = _make_completed(
+            "origin/main\nupstream/main\nupstream/feature\norigin/dev\n"
+        )
+        assert list_remote_branches(REPO) == ["main", "dev"]
+
+    @patch("src.commands.git.git")
     def test_returns_empty_on_error(self, mock_git: patch) -> None:  # type: ignore[type-arg]
         mock_git.side_effect = subprocess.CalledProcessError(1, [])
         assert list_remote_branches(REPO) == []
