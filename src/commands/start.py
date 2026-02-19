@@ -21,6 +21,7 @@ from src.commands.worktree import (
     is_valid_worktree,
     link_deps,
     persistent_worktree_dir,
+    sanitize_branch_name,
     sync_untracked_files,
 )
 from src.settings import ClaudwaySettings
@@ -170,7 +171,8 @@ def _go_temporary(
     user_shell: str,
     shell_only: bool,
 ) -> None:
-    tmpdir = Path(tempfile.mkdtemp(prefix="cw-"))
+    sanitized = sanitize_branch_name(branch)
+    tmpdir = Path(tempfile.mkdtemp(prefix=f"cw-{sanitized}-"))
     tmpdir.rmdir()  # git worktree add requires the target dir not to exist
     cleanup_done = False
 
