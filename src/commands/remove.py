@@ -84,9 +84,7 @@ def rm(
             )
             print_change_summary(changes)
 
-        if not typer.confirm(
-            f"Remove persistent worktree '{branch}'?", default=False
-        ):
+        if not typer.confirm(f"Remove persistent worktree '{branch}'?", default=False):
             console.print("[dim]Aborted.[/dim]")
             raise typer.Exit(1)
 
