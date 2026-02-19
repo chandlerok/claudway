@@ -1,0 +1,48 @@
+# Claudway Demo
+Output demo/demo.gif
+
+Set FontSize 16
+Set Width 1000
+Set Height 600
+Set Padding 20
+Set Theme "Catppuccin Mocha"
+Set TypingSpeed 40ms
+Set Shell fish
+Env SHELL "/opt/homebrew/bin/fish"
+
+# Show help
+Type "cw --help"
+Enter
+Sleep 3s
+
+# Show status
+Type "cw status"
+Enter
+Sleep 3s
+
+# Launch an isolated session on a new branch
+Type "cw go demo/add-dark-mode --shell"
+Enter
+Sleep 2s
+Type "y"
+Enter
+Sleep 5s
+
+# Show the worktree is active
+Type "cw status"
+Enter
+Sleep 3s
+
+# Exit and watch cleanup
+Type "exit"
+Enter
+Sleep 4s
+
+# Show worktree is gone but branch remains
+Type "cw status"
+Enter
+Sleep 3s
+
+Type "git branch"
+Enter
+Sleep 3s

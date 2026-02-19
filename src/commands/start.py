@@ -13,7 +13,7 @@ from rich.console import Console
 from src.app import app
 from src.commands.cleanup import prompt_uncommitted_changes
 from src.commands.git import detect_repo, get_current_branch, resolve_branch
-from src.commands.shell import build_shell_env, get_activate_cmd, launch_shell
+from src.commands.shell import build_shell_env, launch_shell
 from src.commands.worktree import (
     cleanup_worktree,
     create_worktree,
@@ -77,7 +77,6 @@ def go(
                 tmpdir,
                 shell_ctx["user_shell"],
                 shell_ctx["shell_env"],
-                shell_ctx["activate_cmd"],
             )
         cleanup_done = True
         console.print("\n[yellow]Cleaning up worktree ...[/yellow]")
@@ -125,16 +124,13 @@ def go(
         console.print("[dim]Dropping into shell. Type 'exit' to clean up.[/dim]\n")
 
         shell_env = build_shell_env()
-        venv_dir = tmpdir / "mamba" / "venv"
-        activate_cmd = get_activate_cmd(user_shell, venv_dir)
 
         shell_ctx.update(
             user_shell=user_shell,
             shell_env=shell_env,
-            activate_cmd=activate_cmd,
         )
 
-        launch_shell(user_shell, shell_env, activate_cmd, tmpdir)
+        launch_shell(user_shell, shell_env, tmpdir)
 
         signal.signal(signal.SIGINT, original_sigint)
         signal.signal(signal.SIGTERM, original_sigterm)
