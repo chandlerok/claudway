@@ -8,6 +8,7 @@ Set Padding 20
 Set Theme "Catppuccin Mocha"
 Set TypingSpeed 40ms
 Set Shell fish
+Env SHELL "/opt/homebrew/bin/fish"
 
 # Show help
 Type "cw --help"
