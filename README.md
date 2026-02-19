@@ -38,7 +38,7 @@ cw go [BRANCH] [OPTIONS]
 | `-c`, `--command` | Custom command to run instead of the default agent |
 | `-s`, `--shell` | Drop into a shell without launching the agent |
 
-When run without a branch name, `cw go` presents a fuzzy-searchable picker listing local and remote branches (sorted by most recent commit). You can type to filter, select with arrow keys, or choose "+ Create new branch..." to start fresh. Remote branches are automatically checked out as local tracking branches.
+When run without a branch name, `cw go` presents a fuzzy-searchable picker listing local branches first (sorted by most recent commit), followed by remote-only branches (also sorted by most recent commit). You can type to filter, select with arrow keys, or choose "+ Create new branch..." to start fresh. Remote branches are automatically checked out as local tracking branches.
 
 #### Examples
 
