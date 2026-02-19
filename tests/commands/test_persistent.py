@@ -87,6 +87,26 @@ class TestListWorktrees:
         assert result[1]["path"] == "/tmp/cw-xyz"
         assert result[1]["branch"] == "feature"
 
+    def test_detached_worktree(self) -> None:
+        porcelain = (
+            "worktree /home/user/repo\n"
+            "HEAD abc1234567890\n"
+            "branch refs/heads/main\n"
+            "\n"
+            "worktree /tmp/cw-detached\n"
+            "HEAD def4567890abc\n"
+            "detached\n"
+            "\n"
+        )
+        with patch("src.commands.worktree.subprocess.run") as mock_run:
+            mock_run.return_value.returncode = 0
+            mock_run.return_value.stdout = porcelain
+            result = list_worktrees(Path("/home/user/repo"))
+
+        assert len(result) == 2
+        assert result[1]["branch"] == "(detached at def4567)"
+        assert result[1]["path"] == "/tmp/cw-detached"
+
     def test_empty_on_failure(self) -> None:
         with patch("src.commands.worktree.subprocess.run") as mock_run:
             mock_run.return_value.returncode = 1

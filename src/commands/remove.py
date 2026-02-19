@@ -5,6 +5,7 @@ import typer
 from rich.console import Console
 
 from src.app import app
+from src.commands.cleanup import print_change_summary
 from src.commands.git import detect_repo
 from src.commands.picker import fuzzy_select, is_interactive
 from src.commands.worktree import (
@@ -61,12 +62,12 @@ def rm(
         choices = [
             {
                 "name": (f"{wt.get('branch', '(detached)')}  {wt['path']}"),
-                "value": wt.get("branch", "(detached)"),
+                "value": wt["path"],
             }
             for wt in persistent
         ]
         picked = fuzzy_select("Select worktree to remove:", choices)
-        selected = next(wt for wt in persistent if wt.get("branch") == picked)
+        selected = next(wt for wt in persistent if wt["path"] == picked)
     else:
         console.print("[red]No TTY — pass a branch name.[/red]")
         raise typer.Exit(1)
@@ -81,12 +82,7 @@ def rm(
                 f"[bold yellow]\u26a0  Uncommitted changes in"
                 f" '{branch}':[/bold yellow]\n"
             )
-            for line in changes.splitlines()[:10]:
-                console.print(f"  {line}")
-            if len(changes.splitlines()) > 10:
-                extra = len(changes.splitlines()) - 10
-                console.print(f"  [dim]... and {extra} more[/dim]")
-            console.print()
+            print_change_summary(changes)
             if not typer.confirm("Remove anyway?", default=False):
                 console.print("[dim]Aborted.[/dim]")
                 raise typer.Exit(1)

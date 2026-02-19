@@ -22,7 +22,7 @@ def _format_choice(wt: dict[str, str]) -> dict[str, str]:
     branch = wt.get("branch", "(detached)")
     wt_type = wt["type"]
     label = f"{branch}  ({wt_type})  {wt['path']}"
-    return {"name": label, "value": branch}
+    return {"name": label, "value": wt["path"]}
 
 
 @app.command()
@@ -57,7 +57,7 @@ def switch(
     elif is_interactive():
         choices = [_format_choice(wt) for wt in switchable]
         picked = fuzzy_select("Select a worktree:", choices)
-        selected = next(wt for wt in switchable if wt.get("branch") == picked)
+        selected = next(wt for wt in switchable if wt["path"] == picked)
     else:
         console.print("[red]No TTY — pass a branch name.[/red]")
         raise typer.Exit(1)

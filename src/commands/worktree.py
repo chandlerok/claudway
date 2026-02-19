@@ -42,7 +42,7 @@ def cleanup_worktree(repo: Path, tmpdir: Path) -> None:
 
 
 def create_worktree(repo: Path, tmpdir: Path, branch: str) -> None:
-    """Create a git worktree, resolving conflicts interactively."""
+    """Create a git worktree. Raises WorktreeConflict if already checked out."""
     try:
         git(repo, "worktree", "add", str(tmpdir), branch)
     except subprocess.CalledProcessError as e:
@@ -58,14 +58,15 @@ def create_worktree(repo: Path, tmpdir: Path, branch: str) -> None:
             console.print(f"\n[red]Error:[/red] {stderr}")
             raise typer.Exit(1) from None
 
-        console.print(
-            f"[yellow]Branch '{branch}' is already checked out at:"
-            f"[/yellow]\n  {conflict_path}"
-        )
-        if not typer.confirm("Remove the existing worktree?", default=True):
-            raise typer.Exit(1) from None
-        cleanup_worktree(repo, Path(conflict_path))
-        git(repo, "worktree", "add", str(tmpdir), branch)
+        raise WorktreeConflictError(conflict_path) from None
+
+
+class WorktreeConflictError(Exception):
+    """Raised when a branch is already checked out in another worktree."""
+
+    def __init__(self, existing_path: str) -> None:
+        self.existing_path = existing_path
+        super().__init__(f"Branch already checked out at {existing_path}")
 
 
 def find_conflicting_worktree(repo: Path, branch: str) -> str | None:
@@ -103,15 +104,22 @@ def list_worktrees(repo: Path) -> list[dict[str, str]]:
     for line in result.stdout.splitlines():
         if line.startswith("worktree "):
             current = {"path": line.removeprefix("worktree ")}
+        elif line.startswith("HEAD "):
+            current["head"] = line.removeprefix("HEAD ")
         elif line.startswith("branch "):
             current["branch"] = line.removeprefix("branch refs/heads/")
+        elif line == "detached":
+            head = current.get("head", "")
+            current["branch"] = f"(detached at {head[:7]})" if head else "(detached)"
         elif line == "bare":
             current["branch"] = "(bare)"
         elif line == "" and current:
+            current.setdefault("branch", "(unknown)")
             current["type"] = classify_worktree(repo, Path(current["path"]))
             worktrees.append(current)
             current = {}
     if current:
+        current.setdefault("branch", "(unknown)")
         current["type"] = classify_worktree(repo, Path(current["path"]))
         worktrees.append(current)
     return worktrees
@@ -124,11 +132,12 @@ def classify_worktree(repo: Path, wt_path: Path) -> str:
             return "main"
     except OSError:
         pass
-    wt_resolved = str(wt_path.resolve())
-    if str(PERSISTENT_WORKTREES_DIR.resolve()) in wt_resolved:
+    wt_resolved = wt_path.resolve()
+    if wt_resolved.is_relative_to(PERSISTENT_WORKTREES_DIR.resolve()):
         return "persistent"
-    tmpdir = str(Path(tempfile.gettempdir()).resolve())
-    if wt_resolved.startswith(tmpdir) and "/cw-" in wt_resolved:
+    tmpdir = Path(tempfile.gettempdir()).resolve()
+    wt_resolved_str = str(wt_resolved)
+    if wt_resolved_str.startswith(str(tmpdir)) and "/cw-" in wt_resolved_str:
         return "temporary"
     return "unknown"
 

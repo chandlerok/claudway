@@ -15,6 +15,7 @@ from src.commands.cleanup import prompt_uncommitted_changes
 from src.commands.git import detect_repo, get_current_branch, resolve_branch
 from src.commands.shell import build_shell_env, launch_shell
 from src.commands.worktree import (
+    WorktreeConflictError,
     cleanup_worktree,
     create_worktree,
     is_valid_worktree,
@@ -76,6 +77,30 @@ def go(
         _go_temporary(repo, resolved_branch, agent_cmd, user_shell, shell_only)
 
 
+def _enter_existing_worktree(
+    wt_path: Path,
+    branch: str,
+    agent_cmd: str,
+    user_shell: str,
+    shell_only: bool,
+) -> None:
+    """Enter an existing worktree that already has this branch checked out."""
+    console.print(
+        f"[green]\u2713[/green] Branch [bold]{branch}[/bold] is already"
+        f" checked out at [dim]{wt_path}[/dim]"
+    )
+    console.print()
+
+    if not shell_only:
+        console.print(f"[bold cyan]Launching:[/bold cyan] {agent_cmd}\n")
+        subprocess.run(agent_cmd, cwd=wt_path, shell=True)
+
+    console.print("[dim]Dropping into shell. Type 'exit' to leave.[/dim]\n")
+
+    shell_env = build_shell_env()
+    launch_shell(user_shell, shell_env, wt_path)
+
+
 def _go_persistent(
     repo: Path,
     branch: str,
@@ -97,8 +122,13 @@ def _go_persistent(
 
     if not reused:
         wt_dir.parent.mkdir(parents=True, exist_ok=True)
-        with console.status("[bold cyan]Creating worktree ...", spinner="dots"):
-            create_worktree(repo, wt_dir, branch)
+        try:
+            with console.status("[bold cyan]Creating worktree ...", spinner="dots"):
+                create_worktree(repo, wt_dir, branch)
+        except WorktreeConflictError as conflict:
+            return _enter_existing_worktree(
+                Path(conflict.existing_path), branch, agent_cmd, user_shell, shell_only
+            )
         console.print(
             f"[green]\u2713[/green] Worktree created for [bold]{branch}[/bold]"
         )
@@ -172,8 +202,18 @@ def _go_temporary(
         sys.exit(128 + signum)
 
     try:
-        with console.status("[bold cyan]Creating worktree ...", spinner="dots"):
-            create_worktree(repo, tmpdir, branch)
+        try:
+            with console.status("[bold cyan]Creating worktree ...", spinner="dots"):
+                create_worktree(repo, tmpdir, branch)
+        except WorktreeConflictError as conflict:
+            atexit.unregister(do_cleanup)
+            return _enter_existing_worktree(
+                Path(conflict.existing_path),
+                branch,
+                agent_cmd,
+                user_shell,
+                shell_only,
+            )
         console.print(
             f"[green]\u2713[/green] Worktree created for [bold]{branch}[/bold]"
         )
