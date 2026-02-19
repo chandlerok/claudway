@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 CONFIG_DIR = Path.home() / ".config" / "claudway"
 CONFIG_FILE = CONFIG_DIR / "config.toml"
+PERSISTENT_WORKTREES_DIR = Path.home() / ".local" / "share" / "claudway" / "worktrees"
 
 
 class ClaudwaySettings(BaseModel):

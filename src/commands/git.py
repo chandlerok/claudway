@@ -1,5 +1,4 @@
 import subprocess
-import sys
 from pathlib import Path
 
 import typer
@@ -138,6 +137,8 @@ CREATE_NEW = "+ Create new branch..."
 
 def select_branch(repo: Path) -> str:
     """Show a fuzzy-filterable branch list. Falls back to plain prompt if not a TTY."""
+    from src.commands.picker import fuzzy_select, is_interactive
+
     current = get_current_branch(repo)
     local = [b for b in list_local_branches(repo) if b != current]
     local_set = set(local)
@@ -145,37 +146,14 @@ def select_branch(repo: Path) -> str:
         b for b in list_remote_branches(repo) if b not in local_set and b != current
     ]
 
-    if not sys.stdin.isatty():
+    if not is_interactive():
         return typer.prompt("Enter a branch name")
-
-    from InquirerPy import inquirer  # pyright: ignore[reportPrivateImportUsage]
-    from InquirerPy.utils import get_style  # pyright: ignore[reportPrivateImportUsage]
-
-    style = get_style(
-        {
-            "questionmark": "ansiyellow bold",
-            "pointer": "ansicyan bold",
-            "highlighted": "ansicyan",
-            "selected": "ansigreen",
-            "answer": "ansigreen",
-            "input": "ansimagenta bold",
-            "fuzzy_prompt": "ansimagenta bold",
-            "fuzzy_info": "ansiwhite",
-            "fuzzy_border": "ansiblue",
-            "fuzzy_match": "ansiyellow bold",
-        },
-        style_override=False,
-    )
 
     choices: list[str] = [CREATE_NEW]
     choices.extend(local)
     choices.extend(f"origin/{b}" for b in remote_only)
 
-    selected: str = inquirer.fuzzy(  # pyright: ignore[reportPrivateImportUsage]
-        message="Select a branch:",
-        choices=choices,
-        style=style,
-    ).execute()
+    selected = fuzzy_select("Select a branch:", choices)
 
     if selected == CREATE_NEW:
         return typer.prompt("Enter a new branch name")

@@ -1,38 +1,13 @@
-import subprocess
-from pathlib import Path
-
 from rich.console import Console
 from rich.table import Table
 
 from src.app import app
-from src.commands.git import detect_repo, git
+from src.commands.git import detect_repo
+from src.commands.worktree import list_worktrees
 from src.settings import CONFIG_FILE, ClaudwaySettings
 
 
 console = Console()
-
-
-def _list_worktrees(repo: Path) -> list[tuple[str, str]]:
-    """Return a list of (path, branch) tuples for all worktrees in the repo."""
-    result = subprocess.run(
-        ["git", "-C", str(repo), "worktree", "list", "--porcelain"],
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode != 0:
-        return []
-
-    worktrees: list[tuple[str, str]] = []
-    path = ""
-    for line in result.stdout.splitlines():
-        if line.startswith("worktree "):
-            path = line.removeprefix("worktree ")
-        elif line.startswith("branch "):
-            branch = line.removeprefix("branch refs/heads/")
-            worktrees.append((path, branch))
-        elif line == "bare":
-            worktrees.append((path, "(bare)"))
-    return worktrees
 
 
 @app.command()
@@ -56,29 +31,27 @@ def status() -> None:
         )
         return
 
-    try:
-        result = git(repo, "worktree", "list", "--porcelain")
-    except Exception:
-        return
-
-    worktrees = []
-    current: dict[str, str] = {}
-    for line in result.stdout.splitlines():
-        if line.startswith("worktree "):
-            current = {"path": line.split(" ", 1)[1]}
-        elif line.startswith("branch "):
-            current["branch"] = line.split(" ", 1)[1].removeprefix("refs/heads/")
-        elif line == "" and current:
-            worktrees.append(current)
-            current = {}
-    if current:
-        worktrees.append(current)
+    worktrees = list_worktrees(repo)
 
     if worktrees:
         wt_table = Table(title="Active Worktrees", title_style="bold cyan")
         wt_table.add_column("Branch", style="bold")
+        wt_table.add_column("Type")
         wt_table.add_column("Path")
+
+        type_styles = {
+            "main": "green",
+            "persistent": "cyan",
+            "temporary": "yellow",
+        }
+
         for wt in worktrees:
-            wt_table.add_row(wt.get("branch", "(detached)"), wt.get("path", ""))
+            wt_type = wt.get("type", "unknown")
+            style = type_styles.get(wt_type, "dim")
+            wt_table.add_row(
+                wt.get("branch", "(detached)"),
+                f"[{style}]{wt_type}[/{style}]",
+                wt.get("path", ""),
+            )
         console.print()
         console.print(wt_table)

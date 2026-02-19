@@ -1,13 +1,16 @@
 import contextlib
+import hashlib
+import re
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 
 import typer
 from rich.console import Console
 
 from src.commands.git import git, should_sync
-from src.settings import DEP_SYMLINKS
+from src.settings import DEP_SYMLINKS, PERSISTENT_WORKTREES_DIR
 
 
 console = Console()
@@ -75,6 +78,76 @@ def find_conflicting_worktree(repo: Path, branch: str) -> str | None:
         elif line.startswith("branch ") and line.endswith(f"/{branch}"):
             return candidate
     return None
+
+
+def persistent_worktree_dir(repo: Path, branch: str) -> Path:
+    """Return the deterministic persistent worktree path for a branch in a repo."""
+    sanitized = re.sub(r"[/\\]", "-", branch)
+    key = f"{branch}:{repo}"
+    short_hash = hashlib.sha256(key.encode()).hexdigest()[:8]
+    return PERSISTENT_WORKTREES_DIR / f"{sanitized}-{short_hash}"
+
+
+def list_worktrees(repo: Path) -> list[dict[str, str]]:
+    """Return a list of worktree dicts with 'path', 'branch', and 'type' keys."""
+    result = subprocess.run(
+        ["git", "-C", str(repo), "worktree", "list", "--porcelain"],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        return []
+
+    worktrees: list[dict[str, str]] = []
+    current: dict[str, str] = {}
+    for line in result.stdout.splitlines():
+        if line.startswith("worktree "):
+            current = {"path": line.removeprefix("worktree ")}
+        elif line.startswith("branch "):
+            current["branch"] = line.removeprefix("branch refs/heads/")
+        elif line == "bare":
+            current["branch"] = "(bare)"
+        elif line == "" and current:
+            current["type"] = classify_worktree(repo, Path(current["path"]))
+            worktrees.append(current)
+            current = {}
+    if current:
+        current["type"] = classify_worktree(repo, Path(current["path"]))
+        worktrees.append(current)
+    return worktrees
+
+
+def classify_worktree(repo: Path, wt_path: Path) -> str:
+    """Classify a worktree as 'main', 'persistent', or 'temporary'."""
+    try:
+        if wt_path.resolve() == repo.resolve():
+            return "main"
+    except OSError:
+        pass
+    wt_resolved = str(wt_path.resolve())
+    if str(PERSISTENT_WORKTREES_DIR.resolve()) in wt_resolved:
+        return "persistent"
+    tmpdir = str(Path(tempfile.gettempdir()).resolve())
+    if wt_resolved.startswith(tmpdir) and "/cw-" in wt_resolved:
+        return "temporary"
+    return "unknown"
+
+
+def is_valid_worktree(repo: Path, path: Path) -> bool:
+    """Check if the given path is registered in git worktree list."""
+    result = subprocess.run(
+        ["git", "-C", str(repo), "worktree", "list", "--porcelain"],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        return False
+    for line in result.stdout.splitlines():
+        if line.startswith("worktree "):
+            wt_path = line.removeprefix("worktree ")
+            if Path(wt_path).resolve() == path.resolve():
+                return True
+    return False
 
 
 def sync_untracked_files(repo: Path, worktree: Path) -> None:
