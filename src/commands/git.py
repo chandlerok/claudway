@@ -74,6 +74,9 @@ def branch_exists(repo: Path, branch: str) -> bool:
 
 def ensure_branch(repo: Path, branch: str, base: str | None = None) -> str:
     """Ensure *branch* exists, prompting the user to create it if needed."""
+    # Normalize remote refs (e.g. "origin/foo" -> "foo") to avoid detached HEAD
+    if branch.startswith("origin/"):
+        branch = branch.removeprefix("origin/")
     if branch_exists(repo, branch):
         return branch
     # If a remote tracking branch exists, create a local branch tracking it
@@ -104,7 +107,7 @@ def list_local_branches(repo: Path) -> list[str]:
         )
     except subprocess.CalledProcessError:
         return []
-    return [b for b in output.strip().splitlines() if b]
+    return [b for b in output.stdout.strip().splitlines() if b]
 
 
 def list_remote_branches(repo: Path) -> list[str]:
@@ -120,7 +123,7 @@ def list_remote_branches(repo: Path) -> list[str]:
     except subprocess.CalledProcessError:
         return []
     branches: list[str] = []
-    for b in output.strip().splitlines():
+    for b in output.stdout.strip().splitlines():
         if not b or "/HEAD" in b:
             continue
         # Strip remote prefix (e.g. "origin/feature" -> "feature")
