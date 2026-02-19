@@ -34,13 +34,18 @@ cw go [BRANCH] [OPTIONS]
 
 | Option | Description |
 |---|---|
-| `BRANCH` | Git branch to work on (prompted if omitted) |
+| `BRANCH` | Git branch to work on (fuzzy-searchable picker if omitted) |
 | `-c`, `--command` | Custom command to run instead of the default agent |
 | `-s`, `--shell` | Drop into a shell without launching the agent |
+
+When run without a branch name, `cw go` presents a fuzzy-searchable picker listing local and remote branches (sorted by most recent commit). You can type to filter, select with arrow keys, or choose "+ Create new branch..." to start fresh. Remote branches are automatically checked out as local tracking branches.
 
 #### Examples
 
 ```bash
+# Pick a branch interactively
+cw go
+
 # Start Claude Code on a new feature branch
 cw go feature/add-auth
 
