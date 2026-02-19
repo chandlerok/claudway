@@ -83,9 +83,12 @@ def rm(
                 f" '{branch}':[/bold yellow]\n"
             )
             print_change_summary(changes)
-            if not typer.confirm("Remove anyway?", default=False):
-                console.print("[dim]Aborted.[/dim]")
-                raise typer.Exit(1)
+
+        if not typer.confirm(
+            f"Remove persistent worktree '{branch}'?", default=False
+        ):
+            console.print("[dim]Aborted.[/dim]")
+            raise typer.Exit(1)
 
     console.print(f"[yellow]Removing worktree for '{branch}' ...[/yellow]")
     cleanup_worktree(repo, wt_path)
