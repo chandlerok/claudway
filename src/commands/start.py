@@ -15,9 +15,12 @@ from src.commands.cleanup import prompt_uncommitted_changes
 from src.commands.git import detect_repo, get_current_branch, resolve_branch
 from src.commands.shell import build_shell_env, launch_shell
 from src.commands.worktree import (
+    WorktreeConflictError,
     cleanup_worktree,
     create_worktree,
+    is_valid_worktree,
     link_deps,
+    persistent_worktree_dir,
     sync_untracked_files,
 )
 from src.settings import ClaudwaySettings
@@ -48,6 +51,14 @@ def go(
             help="Drop straight into a shell without launching the agent.",
         ),
     ] = False,
+    persistent: Annotated[
+        bool,
+        typer.Option(
+            "--persistent",
+            "-p",
+            help="Create a persistent worktree that survives shell exit.",
+        ),
+    ] = False,
 ) -> None:
     """Start an isolated dev environment in a git worktree."""
     settings = ClaudwaySettings.load()
@@ -60,6 +71,105 @@ def go(
     agent_cmd = command or settings.default_command
     user_shell = os.environ.get("SHELL", "/bin/sh")
 
+    if persistent:
+        _go_persistent(repo, resolved_branch, agent_cmd, user_shell, shell_only)
+    else:
+        _go_temporary(repo, resolved_branch, agent_cmd, user_shell, shell_only)
+
+
+def _enter_existing_worktree(
+    wt_path: Path,
+    branch: str,
+    agent_cmd: str,
+    user_shell: str,
+    shell_only: bool,
+) -> None:
+    """Enter an existing worktree that already has this branch checked out."""
+    console.print(
+        f"[green]\u2713[/green] Branch [bold]{branch}[/bold] is already"
+        f" checked out at [dim]{wt_path}[/dim]"
+    )
+    console.print()
+
+    if not shell_only:
+        console.print(f"[bold cyan]Launching:[/bold cyan] {agent_cmd}\n")
+        subprocess.run(agent_cmd, cwd=wt_path, shell=True)
+
+    console.print("[dim]Dropping into shell. Type 'exit' to leave.[/dim]\n")
+
+    shell_env = build_shell_env()
+    launch_shell(user_shell, shell_env, wt_path)
+
+
+def _go_persistent(
+    repo: Path,
+    branch: str,
+    agent_cmd: str,
+    user_shell: str,
+    shell_only: bool,
+) -> None:
+    wt_dir = persistent_worktree_dir(repo, branch)
+    reused = False
+
+    if wt_dir.exists():
+        if is_valid_worktree(repo, wt_dir):
+            console.print("[green]\u2713[/green] Reusing existing persistent worktree")
+            reused = True
+        else:
+            # Orphaned directory — clean up and recreate
+            console.print("[yellow]Removing orphaned worktree directory ...[/yellow]")
+            cleanup_worktree(repo, wt_dir)
+
+    if not reused:
+        wt_dir.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            with console.status("[bold cyan]Creating worktree ...", spinner="dots"):
+                create_worktree(repo, wt_dir, branch)
+        except WorktreeConflictError as conflict:
+            return _enter_existing_worktree(
+                Path(conflict.existing_path), branch, agent_cmd, user_shell, shell_only
+            )
+        console.print(
+            f"[green]\u2713[/green] Worktree created for [bold]{branch}[/bold]"
+        )
+
+    with console.status("[bold cyan]Syncing untracked files ...", spinner="dots"):
+        sync_untracked_files(repo, wt_dir)
+    console.print("[green]\u2713[/green] Untracked files synced")
+
+    with console.status("[bold cyan]Linking dependencies ...", spinner="dots"):
+        link_deps(repo, wt_dir)
+    console.print("[green]\u2713[/green] Dependencies linked")
+
+    if (wt_dir / "mise.toml").exists():
+        subprocess.run(["mise", "trust"], cwd=wt_dir, capture_output=True)
+
+    console.print()
+    console.print(
+        f"[bold green]Persistent worktree ready![/bold green] [dim]{wt_dir}[/dim]"
+    )
+    console.print(f"[dim]Branch:[/dim] [bold]{branch}[/bold]")
+    console.print()
+
+    if not shell_only:
+        console.print(f"[bold cyan]Launching:[/bold cyan] {agent_cmd}\n")
+        subprocess.run(agent_cmd, cwd=wt_dir, shell=True)
+
+    console.print(
+        "[dim]Dropping into shell. Type 'exit' to leave (worktree persists).[/dim]\n"
+    )
+
+    shell_env = build_shell_env()
+    launch_shell(user_shell, shell_env, wt_dir)
+
+
+def _go_temporary(
+    repo: Path,
+    branch: str,
+    agent_cmd: str,
+    user_shell: str,
+    shell_only: bool,
+) -> None:
     tmpdir = Path(tempfile.mkdtemp(prefix="cw-"))
     tmpdir.rmdir()  # git worktree add requires the target dir not to exist
     cleanup_done = False
@@ -92,10 +202,20 @@ def go(
         sys.exit(128 + signum)
 
     try:
-        with console.status("[bold cyan]Creating worktree ...", spinner="dots"):
-            create_worktree(repo, tmpdir, resolved_branch)
+        try:
+            with console.status("[bold cyan]Creating worktree ...", spinner="dots"):
+                create_worktree(repo, tmpdir, branch)
+        except WorktreeConflictError as conflict:
+            atexit.unregister(do_cleanup)
+            return _enter_existing_worktree(
+                Path(conflict.existing_path),
+                branch,
+                agent_cmd,
+                user_shell,
+                shell_only,
+            )
         console.print(
-            f"[green]\u2713[/green] Worktree created for [bold]{resolved_branch}[/bold]"
+            f"[green]\u2713[/green] Worktree created for [bold]{branch}[/bold]"
         )
 
         with console.status("[bold cyan]Syncing untracked files ...", spinner="dots"):
@@ -111,7 +231,7 @@ def go(
 
         console.print()
         console.print(f"[bold green]Worktree ready![/bold green] [dim]{tmpdir}[/dim]")
-        console.print(f"[dim]Branch:[/dim] [bold]{resolved_branch}[/bold]")
+        console.print(f"[dim]Branch:[/dim] [bold]{branch}[/bold]")
         console.print()
 
         signal.signal(signal.SIGINT, _signal_handler)

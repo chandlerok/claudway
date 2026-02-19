@@ -1,13 +1,16 @@
 import contextlib
+import hashlib
+import re
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 
 import typer
 from rich.console import Console
 
 from src.commands.git import git, should_sync
-from src.settings import DEP_SYMLINKS
+from src.settings import DEP_SYMLINKS, PERSISTENT_WORKTREES_DIR
 
 
 console = Console()
@@ -39,7 +42,7 @@ def cleanup_worktree(repo: Path, tmpdir: Path) -> None:
 
 
 def create_worktree(repo: Path, tmpdir: Path, branch: str) -> None:
-    """Create a git worktree, resolving conflicts interactively."""
+    """Create a git worktree. Raises WorktreeConflict if already checked out."""
     try:
         git(repo, "worktree", "add", str(tmpdir), branch)
     except subprocess.CalledProcessError as e:
@@ -55,14 +58,15 @@ def create_worktree(repo: Path, tmpdir: Path, branch: str) -> None:
             console.print(f"\n[red]Error:[/red] {stderr}")
             raise typer.Exit(1) from None
 
-        console.print(
-            f"[yellow]Branch '{branch}' is already checked out at:"
-            f"[/yellow]\n  {conflict_path}"
-        )
-        if not typer.confirm("Remove the existing worktree?", default=True):
-            raise typer.Exit(1) from None
-        cleanup_worktree(repo, Path(conflict_path))
-        git(repo, "worktree", "add", str(tmpdir), branch)
+        raise WorktreeConflictError(conflict_path) from None
+
+
+class WorktreeConflictError(Exception):
+    """Raised when a branch is already checked out in another worktree."""
+
+    def __init__(self, existing_path: str) -> None:
+        self.existing_path = existing_path
+        super().__init__(f"Branch already checked out at {existing_path}")
 
 
 def find_conflicting_worktree(repo: Path, branch: str) -> str | None:
@@ -75,6 +79,84 @@ def find_conflicting_worktree(repo: Path, branch: str) -> str | None:
         elif line.startswith("branch ") and line.endswith(f"/{branch}"):
             return candidate
     return None
+
+
+def persistent_worktree_dir(repo: Path, branch: str) -> Path:
+    """Return the deterministic persistent worktree path for a branch in a repo."""
+    sanitized = re.sub(r"[/\\]", "-", branch)
+    key = f"{branch}:{repo}"
+    short_hash = hashlib.sha256(key.encode()).hexdigest()[:8]
+    return PERSISTENT_WORKTREES_DIR / f"{sanitized}-{short_hash}"
+
+
+def list_worktrees(repo: Path) -> list[dict[str, str]]:
+    """Return a list of worktree dicts with 'path', 'branch', and 'type' keys."""
+    result = subprocess.run(
+        ["git", "-C", str(repo), "worktree", "list", "--porcelain"],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        return []
+
+    worktrees: list[dict[str, str]] = []
+    current: dict[str, str] = {}
+    for line in result.stdout.splitlines():
+        if line.startswith("worktree "):
+            current = {"path": line.removeprefix("worktree ")}
+        elif line.startswith("HEAD "):
+            current["head"] = line.removeprefix("HEAD ")
+        elif line.startswith("branch "):
+            current["branch"] = line.removeprefix("branch refs/heads/")
+        elif line == "detached":
+            head = current.get("head", "")
+            current["branch"] = f"(detached at {head[:7]})" if head else "(detached)"
+        elif line == "bare":
+            current["branch"] = "(bare)"
+        elif line == "" and current:
+            current.setdefault("branch", "(unknown)")
+            current["type"] = classify_worktree(repo, Path(current["path"]))
+            worktrees.append(current)
+            current = {}
+    if current:
+        current.setdefault("branch", "(unknown)")
+        current["type"] = classify_worktree(repo, Path(current["path"]))
+        worktrees.append(current)
+    return worktrees
+
+
+def classify_worktree(repo: Path, wt_path: Path) -> str:
+    """Classify a worktree as 'main', 'persistent', or 'temporary'."""
+    try:
+        if wt_path.resolve() == repo.resolve():
+            return "main"
+    except OSError:
+        pass
+    wt_resolved = wt_path.resolve()
+    if wt_resolved.is_relative_to(PERSISTENT_WORKTREES_DIR.resolve()):
+        return "persistent"
+    tmpdir = Path(tempfile.gettempdir()).resolve()
+    wt_resolved_str = str(wt_resolved)
+    if wt_resolved_str.startswith(str(tmpdir)) and "/cw-" in wt_resolved_str:
+        return "temporary"
+    return "unknown"
+
+
+def is_valid_worktree(repo: Path, path: Path) -> bool:
+    """Check if the given path is registered in git worktree list."""
+    result = subprocess.run(
+        ["git", "-C", str(repo), "worktree", "list", "--porcelain"],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        return False
+    for line in result.stdout.splitlines():
+        if line.startswith("worktree "):
+            wt_path = line.removeprefix("worktree ")
+            if Path(wt_path).resolve() == path.resolve():
+                return True
+    return False
 
 
 def sync_untracked_files(repo: Path, worktree: Path) -> None:
