@@ -34,7 +34,7 @@ cw go [BRANCH] [OPTIONS]
 
 | Option | Description |
 |---|---|
-| `BRANCH` | Git branch to work on (fuzzy-searchable picker if omitted) |
+| `BRANCH` | Git branch to work on (fzf-like picker if omitted) |
 | `-c`, `--command` | Custom command to run instead of the default agent |
 | `-s`, `--shell` | Drop into a shell without launching the agent |
 
