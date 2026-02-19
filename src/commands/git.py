@@ -95,42 +95,32 @@ def ensure_branch(repo: Path, branch: str, base: str | None = None) -> str:
 
 def list_local_branches(repo: Path) -> list[str]:
     """Return local branch names sorted by most recent commit first."""
-    result = subprocess.run(
-        [
-            "git",
-            "-C",
-            str(repo),
+    try:
+        output = git(
+            repo,
             "branch",
             "--sort=-committerdate",
             "--format=%(refname:short)",
-        ],
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode != 0:
+        )
+    except subprocess.CalledProcessError:
         return []
-    return [b for b in result.stdout.strip().splitlines() if b]
+    return [b for b in output.strip().splitlines() if b]
 
 
 def list_remote_branches(repo: Path) -> list[str]:
     """Return remote branch names (no prefix), sorted by recency."""
-    result = subprocess.run(
-        [
-            "git",
-            "-C",
-            str(repo),
+    try:
+        output = git(
+            repo,
             "branch",
             "-r",
             "--sort=-committerdate",
             "--format=%(refname:short)",
-        ],
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode != 0:
+        )
+    except subprocess.CalledProcessError:
         return []
     branches: list[str] = []
-    for b in result.stdout.strip().splitlines():
+    for b in output.strip().splitlines():
         if not b or "/HEAD" in b:
             continue
         # Strip remote prefix (e.g. "origin/feature" -> "feature")
