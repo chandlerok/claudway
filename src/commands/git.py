@@ -2,8 +2,12 @@ import subprocess
 from pathlib import Path
 
 import typer
+from rich.console import Console
 
 from src.settings import SKIP_NAMES, SKIP_PREFIXES, SKIP_SUFFIXES
+
+
+console = Console()
 
 
 def detect_repo() -> Path | None:
@@ -157,6 +161,10 @@ def select_branch(repo: Path) -> str:
     choices.extend(f"origin/{b}" for b in remote_only)
 
     selected = fuzzy_select("Select a branch:", choices)
+
+    if not selected:
+        console.print("[red]No branch selected. Please select a valid branch.[/red]")
+        raise typer.Exit(1)
 
     if selected == CREATE_NEW:
         return typer.prompt("Enter a new branch name")
