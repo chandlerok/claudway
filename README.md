@@ -37,6 +37,7 @@ cw go [BRANCH] [OPTIONS]
 | `BRANCH` | Git branch to work on (fzf-like picker if omitted) |
 | `-c`, `--command` | Custom command to run instead of the default agent |
 | `-s`, `--shell` | Drop into a shell without launching the agent |
+| `-p`, `--persistent` | Create a persistent worktree that survives shell exit |
 
 When run without a branch name, `cw go` presents a fuzzy-searchable picker listing local branches first (sorted by most recent commit), followed by remote-only branches (also sorted by most recent commit). You can type to filter, select with arrow keys, or choose "+ Create new branch..." to start fresh. Remote branches are automatically checked out as local tracking branches.
 
@@ -54,7 +55,46 @@ cw go bugfix/login -c "cursor ."
 
 # Just get a shell in the worktree, no agent
 cw go experiment --shell
+
+# Create a persistent worktree that sticks around after you exit
+cw go feature/long-running -p
+
+# Re-enter an existing persistent worktree (picks up where you left off)
+cw go feature/long-running -p
 ```
+
+#### Persistent vs Temporary Worktrees
+
+By default, worktrees are **temporary** — they are automatically cleaned up when you exit the shell. This is great for quick, one-off tasks.
+
+With the `-p` / `--persistent` flag, worktrees are stored in `~/.local/share/claudway/worktrees/` and **survive shell exit**. When you run `cw go -p` for the same branch again, the existing worktree is reused with all your changes intact. This is useful for long-running tasks where you want to come back later.
+
+Persistent worktrees can be removed explicitly with `cw rm`.
+
+### `cw switch`
+
+Open a shell in an existing worktree without launching an agent. Useful for inspecting changes or running commands in a worktree created by another session.
+
+```
+cw switch [BRANCH]
+```
+
+When run without a branch name, presents a fuzzy picker listing all active worktrees (main, persistent, and temporary). Warns when switching into a temporary worktree, since it will be deleted when its original session exits.
+
+### `cw rm`
+
+Remove a persistent or temporary worktree.
+
+```
+cw rm [BRANCH] [OPTIONS]
+```
+
+| Option | Description |
+|---|---|
+| `BRANCH` | Branch name of the worktree to remove (picker if omitted) |
+| `-f`, `--force` | Remove without prompting, even with uncommitted changes |
+
+If there are uncommitted changes, `cw rm` shows a summary and asks for confirmation before deleting.
 
 ### `cw set-default-command`
 
@@ -104,7 +144,9 @@ When you run `cw go`, claudway:
 
 6. **Drops into a shell** — after the agent exits, you get an interactive shell in the worktree to inspect changes, run tests, etc.
 
-7. **Cleans up** — when you exit the shell, the worktree is automatically removed. Your branch and its commits are preserved in the main repo.
+7. **Guards against lost work** — when exiting a temporary worktree, checks for uncommitted changes and warns you before cleanup, giving you a chance to go back and commit or stash.
+
+8. **Cleans up** — when you exit the shell, temporary worktrees are automatically removed. Persistent worktrees (`-p`) are kept for later reuse. Your branches and commits are always preserved in the main repo.
 
 ## Configuration
 
