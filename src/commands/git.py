@@ -125,8 +125,11 @@ def list_remote_branches(repo: Path) -> list[str]:
     for b in output.stdout.strip().splitlines():
         if not b or "/HEAD" in b:
             continue
-        # Strip remote prefix (e.g. "origin/feature" -> "feature")
-        _, _, name = b.partition("/")
+        # Only include branches from origin; other remotes would fail
+        # to track/checkout with the hardcoded origin/ assumptions elsewhere.
+        if not b.startswith("origin/"):
+            continue
+        name = b.removeprefix("origin/")
         if name:
             branches.append(name)
     return branches

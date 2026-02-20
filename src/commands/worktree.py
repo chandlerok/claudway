@@ -81,9 +81,14 @@ def find_conflicting_worktree(repo: Path, branch: str) -> str | None:
     return None
 
 
+def sanitize_branch_name(branch: str) -> str:
+    """Replace path separators in a branch name so it's safe for directory names."""
+    return re.sub(r"[/\\]", "-", branch)
+
+
 def persistent_worktree_dir(repo: Path, branch: str) -> Path:
     """Return the deterministic persistent worktree path for a branch in a repo."""
-    sanitized = re.sub(r"[/\\]", "-", branch)
+    sanitized = sanitize_branch_name(branch)
     key = f"{branch}:{repo}"
     short_hash = hashlib.sha256(key.encode()).hexdigest()[:8]
     return PERSISTENT_WORKTREES_DIR / f"{sanitized}-{short_hash}"
