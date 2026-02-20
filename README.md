@@ -7,6 +7,7 @@ A CLI tool that creates isolated dev environments for working with AI agents. Sp
 ## Installation
 
 ```bash
+git clone git@github.com:chandlerok/claudway.git && cd claudway
 uv tool install .
 ```
 
