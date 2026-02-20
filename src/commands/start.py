@@ -71,6 +71,14 @@ def go(
     agent_cmd = command or settings.default_command
     user_shell = os.environ.get("SHELL", "/bin/sh")
 
+    mode = "persistent" if persistent else "temporary"
+    if not typer.confirm(
+        f"Create {mode} worktree for branch '{resolved_branch}'?",
+        default=True,
+    ):
+        console.print("[dim]Aborted.[/dim]")
+        raise typer.Exit(1)
+
     if persistent:
         _go_persistent(repo, resolved_branch, agent_cmd, user_shell, shell_only)
     else:
